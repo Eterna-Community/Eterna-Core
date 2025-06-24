@@ -12,6 +12,8 @@
     "noImplicitAny": true,
     "noImplicitThis": true,
     "noUnusedLocals": true,
+    "allowJs": false,
+    "allowSyntheticDefaultImports": true,
     /** Decorator Stuff **/
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
