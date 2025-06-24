@@ -1,0 +1,24 @@
+{
+	"extends": "../tsconfig.json",
+	"compilerOptions": {
+		"target": "esnext",
+		"useDefineForClassFields": true,
+		"module": "esnext",
+		"baseUrl": ".",
+		"lib": ["DOM", "DOM.Iterable", "esnext"],
+		"strict": false,
+		"strictPropertyInitialization": false,
+		"noImplicitOverride": false,
+		"paths": {
+			"@assets/*": ["src/assets/*"],
+			"@components/*": ["src/components/*"],
+			"@providers/*": ["src/providers/*"],
+			"@store/*": ["src/store/*"],
+			"@utils/*": ["src/utils/*"],
+			"@typings/*": ["src/typings/*"]
+		},
+		"allowJs": false,
+		"checkJs": true
+	},
+	"include": ["src/**/*.d.ts", "src/**/*.ts", "src/**/*.svelte"]
+}
