@@ -1,0 +1,21 @@
+{
+  "name": "eterna-framework",
+  "author": "Eterna-Organization",
+  "version": "0.0.1",
+  "license": "GPL-3.0-only",
+  "description": "Eterna Framework",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Eterna-Community/Eterna-Core.git"
+  },
+  "type": "module",
+  "scripts": {},
+  "devDependencies": {
+    "@citizenfx/client": "2.0.16237-1",
+    "@citizenfx/server": "2.0.14862-1",
+    "@types/node": "24.0.3"
+  },
+  "dependencies": {
+    "reflect-metadata": "0.2.2"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "lockfileVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "eterna-framework",
+      "dependencies": {
+        "reflect-metadata": "0.2.2",
+      },
+      "devDependencies": {
+        "@citizenfx/client": "2.0.16237-1",
+        "@citizenfx/server": "2.0.14862-1",
+        "@types/node": "24.0.3",
+      },
+    },
+  },
+  "packages": {
+    "@citizenfx/client": ["@citizenfx/client@2.0.16237-1", "", {}, "sha512-TE1LDo9+n8GG+vtWT0xMiah2kKxjkaLZnB7o0Lp9Mz0HRH3ptb1x+TD+weFnucokts3q7nKGxJFiXFDvse+WNA=="],
+
+    "@citizenfx/server": ["@citizenfx/server@2.0.14862-1", "", {}, "sha512-I6XnxIGBhskPe9S+q1OQLDqs6TYw1RhX06K6jUg+n0hGITYools6VBIIhdPe2uUlHA+76qJajQlV9ONeR3mDig=="],
+
+    "@types/node": ["@types/node@24.0.3", "", { "dependencies": { "undici-types": "~7.8.0" } }, "sha512-R4I/kzCYAdRLzfiCabn9hxWfbuHS573x+r0dJMkkzThEa7pbrcDWK+9zu3e7aBOouf+rQAciqPFMnxwr0aWgKg=="],
+
+    "reflect-metadata": ["reflect-metadata@0.2.2", "", {}, "sha512-urBwgfrvVP/eAyXx4hluJivBKzuEbSQs9rKWCrCkbSxNv8mxPcUZKeuoF3Uy4mJl3Lwprp6yy5/39VWigZ4K6Q=="],
+
+    "undici-types": ["undici-types@7.8.0", "", {}, "sha512-9UJ2xGDvQ43tYyVMpuHlsgApydB8ZKfVYTsLDhXkFL/6gfkp+U8xTGdh8pMJv1SpZna0zxG1DwsKZsreLbXBxw=="],
+  }
+}

@@ -24,10 +24,10 @@ _✅ More features will be added as the project grows._
 
 ```bash
 core/
+├── docs/
 ├── src/
 │   ├── main/
-│   ├── plugins/
-│   └── docs/
+│   └── modules/
 ├── README.md
 └── ...
 ```
