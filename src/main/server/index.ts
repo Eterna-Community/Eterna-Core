@@ -12,7 +12,6 @@ import { setMaxListeners } from "events";
 
 async function Bootstrap() {
 	try {
-		// Services binden
 		await bindService<ChainMiddlewareEventServerFactory>(
 			"ChainMiddlewareEventServerFactory",
 			ChainMiddlewareEventServerFactory
@@ -22,31 +21,22 @@ async function Bootstrap() {
 			ChainMiddlewareTickServerFactory
 		);
 
-		// Event Listeners Limit setzen
 		try {
 			setMaxListeners(20);
 		} catch (e) {
 			console.warn("Konnte setMaxListeners nicht setzen:", e);
 		}
 
-		// Application erstellen und starten
-		// Leeres Array für Module, da du keine Module übergibst
-		const application = await Application.create(
-			ServerProviderLoader,
-			[], // Leeres Module-Array
-			{
-				gracefulShutdownTimeout: 30000,
-				enableResourceListener: true,
-			}
-		);
+		const application = await Application.create(ServerProviderLoader, [], {
+			gracefulShutdownTimeout: 30000,
+			enableResourceListener: true,
+		});
 
-		// Warten auf Shutdown-Signal statt sofort zu stoppen
 		console.log("Application läuft... Warte auf Shutdown-Signal");
 		await application.waitForShutdown();
 	} catch (error) {
 		console.error("Fehler beim Bootstrap:", error);
 	} finally {
-		// Cleanup
 		unloadGlobalContainer();
 	}
 }
