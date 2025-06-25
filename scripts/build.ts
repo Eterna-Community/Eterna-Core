@@ -1,7 +1,8 @@
 import { build, context, type BuildOptions } from "esbuild";
-import { rmSync, existsSync, mkdirSync } from "fs";
+import { rmSync, existsSync, mkdirSync, readdirSync, statSync } from "fs";
 import { execa } from "execa";
 import path from "path";
+import { writeFxmanifest, type FxmanifestConfig } from "./createFxmanifest";
 
 const args = process.argv.slice(2);
 const isWatch = args.includes("--watch") || args.includes("-w");
@@ -55,6 +56,7 @@ function createBuildConfigs(shared: Partial<BuildOptions>): BuildOptions[] {
       entryPoints: ["src/main/client/index.ts"],
       outfile: "dist/client.js",
       platform: "browser",
+      target: ["es2021"],
       format: "iife",
       globalName: "ClientApp",
       ...shared,
@@ -62,6 +64,7 @@ function createBuildConfigs(shared: Partial<BuildOptions>): BuildOptions[] {
     {
       entryPoints: ["src/main/server/index.ts"],
       outfile: "dist/server.js",
+      target: ["node22"],
       platform: "node",
       format: "cjs",
       external: ["fs", "path", "http", "https", "crypto", "os"],
@@ -74,7 +77,6 @@ async function executeBuild(config: BuildOptions, name: string): Promise<void> {
   try {
     log(`🔨 Building ${name}...`, "blue");
     const result = await build(config);
-
     if (result.metafile) {
       const outputSize = Object.values(result.metafile.outputs).reduce(
         (total, output) => total + output.bytes,
@@ -106,19 +108,21 @@ async function createWatchContext(config: BuildOptions, name: string) {
             build.onStart(() => {
               log(`🔄 Rebuilding ${name}...`, "yellow");
             });
-            build.onEnd((result) => {
+            build.onEnd(async (result) => {
               if (result.errors.length > 0) {
                 log(`❌ ${name} build failed`, "red");
               } else {
                 const time = new Date().toLocaleTimeString();
                 log(`✅ ${name} rebuilt at ${time}`, "green");
+
+                // fxmanifest.lua nach jedem erfolgreichen Build neu erstellen
+                await generateFxmanifest();
               }
             });
           },
         },
       ],
     });
-
     await ctx.watch();
     log(`👀 Watching ${name} for changes...`, "cyan");
     return ctx;
@@ -129,12 +133,66 @@ async function createWatchContext(config: BuildOptions, name: string) {
   }
 }
 
+// Funktion um alle Dateien im web/dist Ordner zu sammeln
+function getWebFiles(): string[] {
+  const webDistPath = path.join("dist", "web");
+
+  if (!existsSync(webDistPath)) {
+    return [];
+  }
+
+  const getAllFiles = (
+    dirPath: string,
+    arrayOfFiles: string[] = []
+  ): string[] => {
+    const files = readdirSync(dirPath);
+
+    files.forEach((file) => {
+      const filePath = path.join(dirPath, file);
+      if (statSync(filePath).isDirectory()) {
+        arrayOfFiles = getAllFiles(filePath, arrayOfFiles);
+      } else {
+        // Relativer Pfad zum dist Ordner
+        const relativePath = path.relative("dist", filePath);
+        arrayOfFiles.push(relativePath);
+      }
+    });
+
+    return arrayOfFiles;
+  };
+
+  return getAllFiles(webDistPath);
+}
+
+async function generateFxmanifest(): Promise<void> {
+  try {
+    log("📝 Generating fxmanifest.lua...", "blue");
+
+    const webFiles = getWebFiles();
+
+    const fxmanifestConfig: FxmanifestConfig = {
+      pathToClient: "client.js",
+      pathToServer: "server.js",
+      pathToIndexHtml: path.join("web", "index.html"),
+      pathToFiles: [
+        ...webFiles,
+        // Weitere statische Dateien hier hinzufügen falls nötig
+      ],
+      outputPath: path.join("dist", "fxmanifest.lua"),
+    };
+
+    writeFxmanifest(fxmanifestConfig);
+    log("✅ fxmanifest.lua generated successfully", "green");
+  } catch (error) {
+    log(`❌ Error generating fxmanifest.lua: ${error}`, "red");
+    throw error;
+  }
+}
+
 async function buildAll(): Promise<void> {
   const startTime = Date.now();
-
   try {
     prepareDistFolder();
-
     const shared = createSharedConfig(isDev);
     const configs = createBuildConfigs(shared);
 
@@ -145,12 +203,14 @@ async function buildAll(): Promise<void> {
 
     if (isWatch) {
       log("👀 Watch mode enabled", "cyan");
-
       await Promise.all(
         configs.map((config, index) =>
           executeBuild(config, getBuildName(index))
         )
       );
+
+      await buildWeb();
+      await generateFxmanifest();
 
       const contexts = await Promise.all(
         configs.map((config, index) =>
@@ -176,6 +236,8 @@ async function buildAll(): Promise<void> {
       );
 
       await buildWeb();
+      await generateFxmanifest();
+
       const duration = Date.now() - startTime;
       log(`🎉 All builds completed in ${duration}ms`, "bright");
     }
@@ -194,12 +256,10 @@ function getBuildName(index: number): string {
 async function buildWeb(): Promise<void> {
   try {
     log("🌐 Building web interface with Vite...", "blue");
-
     await execa("bun", ["run", "vite", "build"], {
       cwd: path.resolve("web"),
       stdio: "inherit",
     });
-
     log("✅ Web interface built successfully", "green");
   } catch (error) {
     log("❌ Failed to build web interface", "red");
@@ -210,7 +270,6 @@ async function buildWeb(): Promise<void> {
 async function watchWeb(): Promise<void> {
   try {
     log("👀 Starting Vite dev server...", "cyan");
-
     const subprocess = execa("bun", ["run", "vite"], {
       cwd: path.resolve("web"),
       stdio: "inherit",
@@ -233,7 +292,6 @@ async function watchWeb(): Promise<void> {
 function showHelp() {
   console.log(`
 ${colors.bright}Build Script Usage:${colors.reset}
-
 ${colors.green}bun run build${colors.reset}              - Production build
 ${colors.green}bun run build --dev${colors.reset}        - Development build
 ${colors.green}bun run build --watch${colors.reset}      - Production build with watch
