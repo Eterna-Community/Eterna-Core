@@ -11,26 +11,61 @@ import { ServerProviderLoader } from "../../common/loader/Provider/provider.serv
 import { setMaxListeners } from "events";
 
 async function Bootstrap() {
-	// await bindInstance("Store", Store);
-	await bindService<ChainMiddlewareEventServerFactory>(
-		"ChainMiddlewareEventServerFactory",
-		ChainMiddlewareEventServerFactory
-	);
-
-	await bindService<ChainMiddlewareTickServerFactory>(
-		"ChainMiddlewareTickServerFactory",
-		ChainMiddlewareTickServerFactory
-	);
-
 	try {
-		setMaxListeners(20);
-	} catch (e) {}
+		// Services binden
+		await bindService<ChainMiddlewareEventServerFactory>(
+			"ChainMiddlewareEventServerFactory",
+			ChainMiddlewareEventServerFactory
+		);
+		await bindService<ChainMiddlewareTickServerFactory>(
+			"ChainMiddlewareTickServerFactory",
+			ChainMiddlewareTickServerFactory
+		);
 
-	const application = await Application.create(ServerProviderLoader);
+		// Event Listeners Limit setzen
+		try {
+			setMaxListeners(20);
+		} catch (e) {
+			console.warn("Konnte setMaxListeners nicht setzen:", e);
+		}
 
-	await application.stop();
+		// Application erstellen und starten
+		// Leeres Array für Module, da du keine Module übergibst
+		const application = await Application.create(
+			ServerProviderLoader,
+			[], // Leeres Module-Array
+			{
+				gracefulShutdownTimeout: 30000,
+				enableResourceListener: true,
+			}
+		);
 
-	unloadGlobalContainer();
+		// Warten auf Shutdown-Signal statt sofort zu stoppen
+		console.log("Application läuft... Warte auf Shutdown-Signal");
+		await application.waitForShutdown();
+	} catch (error) {
+		console.error("Fehler beim Bootstrap:", error);
+	} finally {
+		// Cleanup
+		unloadGlobalContainer();
+	}
 }
 
 Bootstrap();
+
+process.on("SIGINT", () => process.exit(0));
+process.on("SIGTERM", () => process.exit(0));
+
+process.on("uncaughtException", (error) => {
+	console.error("Uncaught Exception:", error);
+	process.exit(1);
+});
+
+process.on("unhandledRejection", (error) => {
+	console.error("Unhandled Rejection:", error);
+	process.exit(1);
+});
+
+process.on("exit", () => {
+	unloadGlobalContainer();
+});
