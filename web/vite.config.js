@@ -2,6 +2,9 @@ import { defineConfig } from 'vite'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 import { resolve } from 'path'
 
+const TestPath =
+	'C:/Users/Leon/Documents/Repositories/FiveM-Shop/ESX/data/resources/Eterna-Core/web'
+
 // https://vitejs.dev/config/
 export default defineConfig({
 	css: {},
@@ -23,7 +26,7 @@ export default defineConfig({
 	},
 	build: {
 		emptyOutDir: true,
-		outDir: '../dist/web',
+		outDir: TestPath,
 		assetsDir: './',
 		rollupOptions: {
 			output: {

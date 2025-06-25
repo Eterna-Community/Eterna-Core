@@ -34,6 +34,8 @@
   "dependencies": {
     "esbuild": "^0.25.5",
     "esbuild-svelte": "^0.9.3",
+    "inversify": "^7.5.3",
+    "prom-client": "^15.1.3",
     "reflect-metadata": "0.2.2"
   }
 }

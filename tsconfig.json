@@ -1,24 +1,25 @@
 {
-  "compilerOptions": {
-    "module": "es2020",
-    "target": "es2021",
-    "lib": ["es2021"],
-    "types": ["@types/node", "reflect-metadata"],
-    "resolveJsonModule": true,
-    "esModuleInterop": true,
-    "allowUnreachableCode": false,
-    "strictFunctionTypes": true,
-    "moduleResolution": "bundler",
-    "noImplicitAny": true,
-    "noImplicitThis": true,
-    "noUnusedLocals": true,
-    "allowJs": false,
-    "allowSyntheticDefaultImports": true,
-    /** Decorator Stuff **/
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    /** Decorator Stuff end **/
-    "skipLibCheck": true
-  },
-  "include": ["./src", "./web", "./scripts"]
+	"compilerOptions": {
+		"types": ["@types/node", "reflect-metadata"],
+		"module": "es2022",
+		"target": "es2022",
+		"lib": ["es2022"],
+		"resolveJsonModule": true,
+		"allowUnreachableCode": false,
+		"strictFunctionTypes": true,
+		"noImplicitAny": true,
+		"noImplicitThis": true,
+		"noUnusedLocals": true,
+		"allowJs": false,
+		"allowSyntheticDefaultImports": true,
+		/** Decorator Stuff **/
+		"experimentalDecorators": true,
+		"emitDecoratorMetadata": true,
+		/** Decorator Stuff end **/
+		"skipLibCheck": true,
+		"importHelpers": true,
+		"moduleResolution": "bundler",
+		"esModuleInterop": true
+	},
+	"include": ["./src", "./web", "./scripts"]
 }
