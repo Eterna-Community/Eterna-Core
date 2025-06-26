@@ -9,7 +9,7 @@ import { EventsServer } from "../../../common/events/Server";
 export class TestProvider {
 	@Tick(Interval.EVERY_MINUTE, "test")
 	public async test() {
-		console.log("test");
+		TriggerEvent("debug", "test");
 	}
 
 	@OnEvent(EventsServer.onResourceStart)
@@ -17,8 +17,9 @@ export class TestProvider {
 		console.log("onServerResourceStart", resourceName);
 	}
 
-	@Once(OnceSharedEvents.Start)
-	async start() {
-		console.log("start");
+	@OnEvent(EventsServer.debug, { networked: false })
+	public async onDebug(data: string) {
+		// data is not there, event though its give above
+		console.log("onDebug", data);
 	}
 }

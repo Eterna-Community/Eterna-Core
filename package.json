@@ -1,41 +1,44 @@
 {
-  "name": "eterna-framework",
-  "author": "Eterna-Organization",
-  "version": "0.0.1",
-  "license": "GPL-3.0-only",
-  "description": "Eterna Framework",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Eterna-Community/Eterna-Core.git"
-  },
-  "type": "module",
-  "scripts": {
-    "build": "bun run scripts/build.ts",
-    "watch": "bun run scripts/build.ts --watch",
-    "dev": "bun run scripts/build.ts --dev"
-  },
-  "devDependencies": {
-    "@citizenfx/client": "2.0.16237-1",
-    "@citizenfx/server": "2.0.14862-1",
-    "@sveltejs/vite-plugin-svelte": "5.1.0",
-    "@tsconfig/svelte": "^5.0.4",
-    "@types/node": "24.0.3",
-    "autoprefixer": "^10.4.21",
-    "execa": "^9.6.0",
-    "postcss": "^8.5.6",
-    "svelte": "^5.34.7",
-    "svelte-check": "^4.2.2",
-    "svelte-preprocess": "^6.0.3",
-    "tailwindcss": "^4.1.10",
-    "tslib": "^2.8.1",
-    "typescript": "^5.8.3",
-    "vite": "^7.0.0"
-  },
-  "dependencies": {
-    "esbuild": "^0.25.5",
-    "esbuild-svelte": "^0.9.3",
-    "inversify": "^7.5.3",
-    "prom-client": "^15.1.3",
-    "reflect-metadata": "0.2.2"
-  }
+	"name": "eterna-framework",
+	"author": "Eterna-Organization",
+	"version": "0.0.1",
+	"license": "GPL-3.0-only",
+	"description": "Eterna Framework",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Eterna-Community/Eterna-Core.git"
+	},
+	"type": "module",
+	"scripts": {
+		"build": "bun run scripts/build.ts",
+		"watch": "bun run scripts/build.ts --watch",
+		"dev": "bun run scripts/build.ts --dev"
+	},
+	"devDependencies": {
+		"@citizenfx/client": "^2.0.16356-1",
+		"@citizenfx/server": "^2.0.14862-1",
+		"@sveltejs/vite-plugin-svelte": "5.1.0",
+		"@tsconfig/svelte": "^5.0.4",
+		"@types/node": "24.0.3",
+		"autoprefixer": "^10.4.21",
+		"execa": "^9.6.0",
+		"postcss": "^8.5.6",
+		"svelte": "^5.34.7",
+		"svelte-check": "^4.2.2",
+		"svelte-preprocess": "^6.0.3",
+		"tailwindcss": "^4.1.10",
+		"tslib": "^2.8.1",
+		"typescript": "^5.8.3",
+		"vite": "^7.0.0"
+	},
+	"dependencies": {
+		"@rematch/core": "^2.2.0",
+		"esbuild": "^0.25.5",
+		"esbuild-svelte": "^0.9.3",
+		"inversify": "^7.5.3",
+		"prom-client": "^15.1.3",
+		"redux": "^5.0.1",
+		"reflect-metadata": "0.2.2",
+		"reselect": "^5.1.1"
+	}
 }
