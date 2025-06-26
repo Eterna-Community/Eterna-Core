@@ -1,3 +1,4 @@
+import { isServer } from "../app";
 import { EventMetadata } from "../decorator/Events/OnEvent";
 import { Injectable } from "../decorator/Injectable";
 import { Middleware, MiddlewareFactory } from "./middleware";
@@ -6,7 +7,7 @@ import { Middleware, MiddlewareFactory } from "./middleware";
 @Injectable()
 export class SourceMiddlewareFactory implements MiddlewareFactory {
 	public create(event: EventMetadata, next: Middleware): Middleware {
-		if (IsDuplicityVersion()) {
+		if (isServer) {
 			return (...args): void | Promise<any> => {
 				if (event.networked) {
 					const source = (globalThis as any).source as number;

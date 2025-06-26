@@ -3,10 +3,10 @@ import { OnceSharedEvents } from "./events/Once";
 import { getGlobalContainer } from "./global";
 import { OnceLoader } from "./loader/Events/once.loader";
 import { ModuleLoader } from "./loader/module.loader";
-import { ClientProviderLoader } from "./loader/Provider/provider.client.loader";
 import { ProviderLoader } from "./loader/Provider/provider.loader";
-import { ServerProviderLoader } from "./loader/Provider/provider.server.loader";
 import { Logger } from "./logger/logger";
+
+export const isServer = IsDuplicityVersion();
 
 export enum ApplicationState {
 	STOPPED = "stopped",
@@ -31,15 +31,6 @@ export interface ApplicationModuleWithClass extends ApplicationModule {
 }
 
 export type ModuleInput = ApplicationModule | (new () => ApplicationModule);
-
-// Helper function to check if this is server or client environment
-function IsDuplicityVersion(): boolean {
-	// Adjust this logic based on your environment detection
-	return (
-		typeof GetCurrentResourceName !== "undefined" &&
-		typeof global !== "undefined"
-	);
-}
 
 @Injectable()
 export class Application {

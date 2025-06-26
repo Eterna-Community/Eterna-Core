@@ -62,6 +62,10 @@ function createBuildConfigs(shared: Partial<BuildOptions>): BuildOptions[] {
 			target: ["es2021"],
 			format: "iife",
 			globalName: "ClientApp",
+			define: {
+				isServer: "false",
+				isClient: "true",
+			},
 			...shared,
 		},
 		{
@@ -70,6 +74,10 @@ function createBuildConfigs(shared: Partial<BuildOptions>): BuildOptions[] {
 			target: ["node22"],
 			platform: "node",
 			format: "cjs",
+			define: {
+				isClient: "false",
+				isServer: "true",
+			},
 			external: ["fs", "path", "http", "https", "crypto", "os", "tslib"],
 			...shared,
 		},

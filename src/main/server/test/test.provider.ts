@@ -7,14 +7,14 @@ import { EventsServer } from "../../../common/events/Server";
 
 @Provider()
 export class TestProvider {
-	@Tick(Interval.EVERY_SECOND, "test")
+	@Tick(Interval.EVERY_MINUTE, "test")
 	public async test() {
 		console.log("test");
 	}
 
 	@OnEvent(EventsServer.onResourceStart)
 	public async onServerResourceStart(resourceName: string) {
-		console.log("onServerResourceStart");
+		console.log("onServerResourceStart", resourceName);
 	}
 
 	@Once(OnceSharedEvents.Start)
