@@ -11,13 +11,11 @@
 	<!-- PUT STUFF HERE  -->
 </VisibilityProvider>
 
-
 <AlwaysListener />
 {#if $BROWSER_MODE}
 	<DebugBrowser />
-	<div class="absolute w-screen h-screen top-0 left-0 dev-image" />
+	<div class="absolute w-screen h-screen top-0 left-0 dev-image"></div>
 {/if}
-
 
 <style>
 	.dev-image {
@@ -25,6 +23,5 @@
 		background-size: cover;
 		background-repeat: no-repeat;
 		background-position: center;
-
 	}
 </style>

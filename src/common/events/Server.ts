@@ -1,5 +1,6 @@
 export enum EventsServer {
-  // CFX Events
-  PlayerIsJoining = "playerConnecting",
-  PlayerLeft = "playerDropped",
+	// CFX Events
+	PlayerIsJoining = "playerConnecting",
+	PlayerLeft = "playerDropped",
+	onResourceStart = "onResourceStart",
 }

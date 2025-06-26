@@ -8,8 +8,8 @@ const args = process.argv.slice(2);
 const isWatch = args.includes("--watch") || args.includes("-w");
 const isDev = args.includes("--dev") || args.includes("-d");
 
-const TestPath =
-	"C:/Users/Leon/Documents/Repositories/FiveM-Shop/ESX/data/resources/Eterna-Core";
+//!TODO: GITHUB_TODO this path to your output Path
+const BuildOutputPath = "../../game_server/data_files/resources/Eterna";
 
 const colors = {
 	reset: "\x1b[0m",
@@ -28,11 +28,11 @@ function log(message: string, color: keyof typeof colors = "reset") {
 
 function prepareDistFolder() {
 	try {
-		if (existsSync(TestPath)) {
+		if (existsSync(BuildOutputPath)) {
 			log("🗑️  Cleaning dist folder...", "yellow");
-			rmSync(TestPath, { recursive: true, force: true });
+			rmSync(BuildOutputPath, { recursive: true, force: true });
 		}
-		mkdirSync(TestPath, { recursive: true });
+		mkdirSync(BuildOutputPath, { recursive: true });
 		log("📁 Created dist folder", "green");
 	} catch (error) {
 		log(`❌ Error preparing dist folder: ${error}`, "red");
@@ -57,7 +57,7 @@ function createBuildConfigs(shared: Partial<BuildOptions>): BuildOptions[] {
 	return [
 		{
 			entryPoints: ["src/main/client/index.ts"],
-			outfile: `${TestPath}/client.js`,
+			outfile: `${BuildOutputPath}/client.js`,
 			platform: "browser",
 			target: ["es2021"],
 			format: "iife",
@@ -66,7 +66,7 @@ function createBuildConfigs(shared: Partial<BuildOptions>): BuildOptions[] {
 		},
 		{
 			entryPoints: ["src/main/server/index.ts"],
-			outfile: `${TestPath}/server.js`,
+			outfile: `${BuildOutputPath}/server.js`,
 			target: ["node22"],
 			platform: "node",
 			format: "cjs",
@@ -138,7 +138,7 @@ async function createWatchContext(config: BuildOptions, name: string) {
 
 // Funktion um alle Dateien im web/dist Ordner zu sammeln
 function getWebFiles(): string[] {
-	const webDistPath = path.join(TestPath, "web");
+	const webDistPath = path.join(BuildOutputPath, "web");
 
 	if (!existsSync(webDistPath)) {
 		return [];
@@ -156,7 +156,7 @@ function getWebFiles(): string[] {
 				arrayOfFiles = getAllFiles(filePath, arrayOfFiles);
 			} else {
 				// Relativer Pfad zum dist Ordner
-				const relativePath = path.relative(TestPath, filePath);
+				const relativePath = path.relative(BuildOutputPath, filePath);
 				arrayOfFiles.push(relativePath);
 			}
 		});
@@ -181,7 +181,7 @@ async function generateFxmanifest(): Promise<void> {
 				...webFiles,
 				// Weitere statische Dateien hier hinzufügen falls nötig
 			],
-			outputPath: path.join(TestPath, "fxmanifest.lua"),
+			outputPath: path.join(BuildOutputPath, "fxmanifest.lua"),
 		};
 
 		writeFxmanifest(fxmanifestConfig);

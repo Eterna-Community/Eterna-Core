@@ -1,5 +1,5 @@
 import { DecoratorMetadataKey } from "../constants";
-import { addMethodMetadata } from "../reflect";
+import { setMethodMetadata } from "../reflect";
 
 export enum Interval {
 	EVERY_FRAME = 0,
@@ -34,7 +34,7 @@ export const Tick = (
 		throw new Error("Tick name must be a non-empty string");
 	}
 
-	return (target, propertyKey, descriptor) => {
+	return (target, propertyKey) => {
 		const metadata: TickMetadata = {
 			interval,
 			name,
@@ -42,6 +42,6 @@ export const Tick = (
 			...options,
 		};
 
-		addMethodMetadata(DecoratorMetadataKey.tick, metadata, target, propertyKey);
+		setMethodMetadata(DecoratorMetadataKey.tick, metadata, target, propertyKey);
 	};
 };

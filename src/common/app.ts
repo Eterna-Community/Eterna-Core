@@ -3,6 +3,9 @@ import { OnceSharedEvents } from "./events/Once";
 import { getGlobalContainer } from "./global";
 import { OnceLoader } from "./loader/Events/once.loader";
 import { ModuleLoader } from "./loader/module.loader";
+import { ClientProviderLoader } from "./loader/Provider/provider.client.loader";
+import { ProviderLoader } from "./loader/Provider/provider.loader";
+import { ServerProviderLoader } from "./loader/Provider/provider.server.loader";
 import { Logger } from "./logger/logger";
 
 export enum ApplicationState {
@@ -23,6 +26,21 @@ export interface ApplicationOptions {
 	enableResourceListener?: boolean;
 }
 
+export interface ApplicationModuleWithClass extends ApplicationModule {
+	moduleClass?: new () => ApplicationModule;
+}
+
+export type ModuleInput = ApplicationModule | (new () => ApplicationModule);
+
+// Helper function to check if this is server or client environment
+function IsDuplicityVersion(): boolean {
+	// Adjust this logic based on your environment detection
+	return (
+		typeof GetCurrentResourceName !== "undefined" &&
+		typeof global !== "undefined"
+	);
+}
+
 @Injectable()
 export class Application {
 	private state: ApplicationState = ApplicationState.STOPPED;
@@ -30,7 +48,7 @@ export class Application {
 	private shutdownResolver: ((value: boolean) => void) | null = null;
 	private onStopCallback: (() => void) | null = null;
 	private readonly container = getGlobalContainer();
-	private readonly modules: ApplicationModule[] = [];
+	private readonly modules: ApplicationModuleWithClass[] = [];
 	private readonly options: Required<ApplicationOptions>;
 
 	@Inject(ModuleLoader)
@@ -42,11 +60,6 @@ export class Application {
 	@Inject(Logger)
 	private readonly logger: Logger;
 
-	/**
-	 * @param {ApplicationOptions} [options] - Optional configuration options for the Application.
-	 * @param {number} [options.gracefulShutdownTimeout=30000] - The amount of time in milliseconds to wait for all modules to finish shutting down before the application is fully stopped.
-	 * @param {boolean} [options.enableResourceListener=true] - Whether or not to enable the resource listener to automatically detect and load modules.
-	 */
 	constructor(options: ApplicationOptions = {}) {
 		this.options = {
 			gracefulShutdownTimeout: 30000,
@@ -55,48 +68,57 @@ export class Application {
 		};
 	}
 
-	/**
-	 * Creates a new Application instance and starts it.
-	 * @param {new (...args: any[]) => T} providerTarget - The target class to be used as the provider for the application.
-	 * @param {ApplicationModule[]} [modules=[]] - An array of modules to be loaded into the application.
-	 * @param {ApplicationOptions} [options] - Optional configuration options for the Application.
-	 * @returns {Promise<Application>} - A Promise that resolves with the created Application instance.
-	 */
 	static async create<T>(
 		providerTarget: new (...args: any[]) => T,
-		modules: ApplicationModule[] = [],
+		modules: (ApplicationModule | (new () => ApplicationModule))[] = [],
 		options?: ApplicationOptions
 	): Promise<Application> {
 		try {
-			getGlobalContainer()
-				.bind<T>(providerTarget)
-				.to(providerTarget)
-				.inSingletonScope();
+			const container = getGlobalContainer();
+			if (!container.isBound(providerTarget)) {
+				container.bind<T>(providerTarget).to(providerTarget).inSingletonScope();
+			}
 
-			const app = getGlobalContainer().get<Application>(Application);
+			Application.registerCoreServices();
+
+			const app = container.get<Application>(Application);
 
 			for (const module of modules) {
 				await app.addModule(module);
 			}
-
 			await app.start();
 			return app;
 		} catch (error) {
 			const errorMessage =
 				error instanceof Error ? error.message : String(error);
 			console.error(`Application couldn't be created: ${errorMessage}`);
+			console.error(
+				"Stack:",
+				error instanceof Error ? error.stack : "No stack available"
+			);
 			throw error;
 		}
 	}
 
 	/**
-	 * Starts the Application and begins loading all modules.
-	 *
-	 * If the Application is already running, this method will do nothing.
-	 *
-	 * @returns {Promise<void>} - A Promise that resolves when the Application has finished starting.
-	 * @throws {Error} - If an error occurs while starting the Application.
+	 * Later on this method will be removed, it was for debug Purpose
 	 */
+	private static registerCoreServices(): void {
+		const container = getGlobalContainer();
+		try {
+			const providerLoader = container.get<ProviderLoader>(ProviderLoader);
+			console.log("[DEBUG] ProviderLoader instance created successfully");
+			console.log(
+				"[DEBUG] ProviderLoader has load method:",
+				typeof providerLoader.load === "function"
+			);
+		} catch (error) {
+			console.error("[DEBUG] Failed to create ProviderLoader instance:", error);
+		}
+
+		console.log("[DEBUG] All core services registered");
+	}
+
 	async start(): Promise<void> {
 		if (this.state !== ApplicationState.STOPPED) {
 			this.logger.warn(`Application is already in state ${this.state}`);
@@ -112,9 +134,7 @@ export class Application {
 			});
 
 			await this.loadModules();
-
 			this.registerEventListeners();
-
 			await this.onceLoader.trigger(OnceSharedEvents.Start);
 
 			this.state = ApplicationState.RUNNING;
@@ -126,14 +146,6 @@ export class Application {
 		}
 	}
 
-	/**
-	 * Stops the Application and attempts to gracefully shut down all modules.
-	 *
-	 * If the Application is already stopped or stopping, appropriate messages are logged.
-	 *
-	 * @returns {Promise<boolean>} - A Promise that resolves to true if the Application was stopped successfully,
-	 *                               or false if an error occurred during the shutdown process.
-	 */
 	async stop(): Promise<boolean> {
 		if (this.state === ApplicationState.STOPPED) {
 			this.logger.warn("Application is already stopped");
@@ -165,35 +177,14 @@ export class Application {
 		}
 	}
 
-	/**
-	 * Retrieves the current state of the Application.
-	 *
-	 * @returns {ApplicationState} - The current state of the Application.
-	 */
 	getState(): ApplicationState {
 		return this.state;
 	}
 
-	/**
-	 * Checks if the Application is currently running.
-	 *
-	 * @returns {boolean} - True if the Application state is RUNNING, otherwise false.
-	 */
 	isRunning(): boolean {
 		return this.state === ApplicationState.RUNNING;
 	}
 
-	/**
-	 * Waits for the Application to finish shutting down.
-	 *
-	 * If the Application is already stopped, this method will return immediately with a value of true.
-	 * If the Application is currently shutting down, this method will wait for the shutdown to finish and
-	 * return the result of the shutdown process.
-	 *
-	 * @returns {Promise<boolean>} - A Promise that resolves with a boolean indicating whether the shutdown process
-	 *                               was successful. If the Application is already stopped, the Promise will resolve
-	 *                               immediately with a value of true.
-	 */
 	async waitForShutdown(): Promise<boolean> {
 		if (this.state === ApplicationState.STOPPED) {
 			return true;
@@ -201,25 +192,13 @@ export class Application {
 		return this.shutdownPromise || Promise.resolve(true);
 	}
 
-	/**
-	 * Adds a module to the list of modules that will be loaded when the application
-	 * starts. If the module is a class, it will be instantiated and the instance
-	 * will be added to the list. If the module is an instance, it will be added to
-	 * the list directly.
-	 *
-	 * If the module has an `initialize` method, it will be called after the module
-	 * has been added to the list.
-	 *
-	 * @param {ApplicationModule} module - The module to add. Can be a class or an instance.
-	 * @returns {Promise<void>} - A Promise that resolves when the module has been added.
-	 * @throws {Error} - If an error occurs while adding the module.
-	 */
-	private async addModule(module: ApplicationModule): Promise<void> {
+	private async addModule(module: ModuleInput): Promise<void> {
 		try {
-			let moduleInstance: ApplicationModule;
+			let moduleInstance: ApplicationModuleWithClass;
 
 			if (typeof module === "function") {
-				moduleInstance = this.container.get(module);
+				moduleInstance = new module();
+				moduleInstance.moduleClass = module;
 			} else {
 				moduleInstance = module;
 			}
@@ -227,7 +206,6 @@ export class Application {
 			if (moduleInstance.initialize) {
 				await moduleInstance.initialize();
 			}
-
 			this.modules.push(moduleInstance);
 			this.logger.debug(`Module added: ${moduleInstance.name || "N/A"}`);
 		} catch (error) {
@@ -236,20 +214,12 @@ export class Application {
 		}
 	}
 
-	/**
-	 * Loads all modules that were added to the application.
-	 *
-	 * Goes through all modules that were added to the application and calls the
-	 * `load` method on the module loader for each of them. If an error occurs while
-	 * loading a module, it will be logged and re-thrown.
-	 *
-	 * @returns {Promise<void>} - A Promise that resolves when all modules have been loaded.
-	 * @throws {Error} - If an error occurs while loading a module.
-	 */
 	private async loadModules(): Promise<void> {
 		for (const module of this.modules) {
 			try {
-				await this.moduleLoader.load(module);
+				const moduleToLoad =
+					(module as ApplicationModuleWithClass).moduleClass || module;
+				this.moduleLoader.load(moduleToLoad);
 				this.logger.debug(`Module loaded: ${module.name || "N/A"}`);
 			} catch (error) {
 				this.logger.error(
@@ -261,19 +231,6 @@ export class Application {
 		}
 	}
 
-	/**
-	 * Registers event listeners for resource stops and application stops.
-	 *
-	 * Registers two event listeners:
-	 *  1. A listener for the "onResourceStop" event that will be triggered when the
-	 *     resource the application is running in stops. This listener will call the
-	 *     `handleStop` method.
-	 *  2. A listener for the "Eterna.__internal__.stop_application" event that will be
-	 *     triggered when the application is stopped. This listener will also call the
-	 *     `handleStop` method.
-	 *
-	 * @returns {void}
-	 */
 	private registerEventListeners(): void {
 		this.onStopCallback = this.handleStop.bind(this);
 
@@ -300,21 +257,6 @@ export class Application {
 		}
 	}
 
-	/**
-	 * Handles the stop event for the application.
-	 *
-	 * This method is called when a stop event is received, either through the
-	 * "onResourceStop" event or the "Eterna.__internal__.stop_application" event.
-	 *
-	 * If the application is already stopped or stopping, this method will do
-	 * nothing and return immediately.
-	 *
-	 * Otherwise, this method will log an info message, call the `stop` method to
-	 * initiate the shutdown process, and catch and log any errors that may occur
-	 * during shutdown.
-	 *
-	 * @returns {void}
-	 */
 	private handleStop(): void {
 		if (
 			this.state === ApplicationState.STOPPED ||
@@ -329,32 +271,13 @@ export class Application {
 		});
 	}
 
-	/**
-	 * Performs the shutdown sequence for the Application.
-	 *
-	 * This method triggers the stop event for OnceLoader, cleans up and unloads all modules,
-	 * removes event listeners, resolves the shutdown promise, and performs cleanup operations.
-	 * If any error occurs during the shutdown process, it will be caught, logged, and the
-	 * shutdown promise will be resolved with a false value.
-	 *
-	 * @returns {Promise<boolean>} - A Promise that resolves to true if the shutdown process
-	 *                               completed successfully, or false if an error occurred.
-	 */
 	private async performShutdown(): Promise<boolean> {
 		try {
-			// OnceLoader stopping
 			await this.onceLoader.trigger(OnceSharedEvents.Stop);
-
-			// Module cleanup
 			await this.cleanupModules();
-
-			// ModuleLoader unloading
 			await this.moduleLoader.unload();
-
-			// Event Listener removing
 			this.removeEventListeners();
 
-			// Shutdown Promise resolve
 			if (this.shutdownResolver) {
 				this.shutdownResolver(true);
 			}
@@ -373,14 +296,6 @@ export class Application {
 		}
 	}
 
-	/**
-	 * Performs cleanup operations on all modules that were loaded.
-	 *
-	 * Calls the `cleanup` method on each of the loaded modules, if they have one.
-	 * If an error occurs while cleaning a module, it will be logged and ignored.
-	 *
-	 * @returns {Promise<void>} - A Promise that resolves when all modules have been cleaned.
-	 */
 	private async cleanupModules(): Promise<void> {
 		for (const module of this.modules) {
 			try {
@@ -397,12 +312,6 @@ export class Application {
 		}
 	}
 
-	/**
-	 * Removes the event listener for the "Eterna.__internal__.stop_application"
-	 * event, if it was set.
-	 *
-	 * @private
-	 */
 	private removeEventListeners(): void {
 		if (this.onStopCallback && typeof removeEventListener !== "undefined") {
 			removeEventListener(
@@ -412,17 +321,6 @@ export class Application {
 		}
 	}
 
-	/**
-	 * Creates a Promise that resolves to false after the specified timeout has passed.
-	 *
-	 * The timeout is set to the value of the `gracefulShutdownTimeout` option, which is
-	 * set to 5000ms (5 seconds) by default.
-	 *
-	 * When the timeout is reached, a warn message is logged and the Promise is resolved
-	 * to false, indicating that the shutdown was not graceful.
-	 *
-	 * @returns {Promise<boolean>} - A Promise that resolves to false after the specified timeout.
-	 */
 	private createShutdownTimeout(): Promise<boolean> {
 		return new Promise((resolve) => {
 			setTimeout(() => {
@@ -434,14 +332,6 @@ export class Application {
 		});
 	}
 
-	/**
-	 * Cleans up internal variables after a shutdown.
-	 *
-	 * Resets the {@link shutdownPromise}, {@link shutdownResolver}, and
-	 * {@link onStopCallback} properties to `null`.
-	 *
-	 * @private
-	 */
 	private cleanup(): void {
 		this.shutdownPromise = null;
 		this.shutdownResolver = null;

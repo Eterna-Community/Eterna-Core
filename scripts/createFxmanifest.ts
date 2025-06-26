@@ -26,31 +26,34 @@ files {
 }
 `;
 
+const BuildOutputPath = "../../game_server/data_files/resources/Eterna";
+
 export interface FxmanifestConfig {
-  pathToClient: string;
-  pathToServer: string;
-  pathToIndexHtml: string;
-  pathToFiles: string[];
-  outputPath?: string;
+	pathToClient: string;
+	pathToServer: string;
+	pathToIndexHtml: string;
+	pathToFiles: string[];
+	outputPath?: string;
 }
 
 export const createFxmanifest = (config: FxmanifestConfig): string => {
-  const sanitizePath = (path: string): string => path.replace(/\\/g, "/");
-  // Files Array formatieren
-  const filesContent = config.pathToFiles
-    .map((file) => `    '${sanitizePath(file)}'`)
-    .join(",\n");
+	const sanitizePath = (path: string): string => path.replace(/\\/g, "/");
+	// Files Array formatieren
+	const filesContent = config.pathToFiles
+		.map((file) => `    '${sanitizePath(file)}'`)
+		.join(",\n");
 
-  return exampleFxmanifest
-    .replace("{PATH_TO_CLIENT}", config.pathToClient)
-    .replace("{PATH_TO_SERVER}", config.pathToServer)
-    .replace("{PATH_TO_INDEX_HTML}", sanitizePath(config.pathToIndexHtml))
-    .replace("{PATH_TO_FILES}", filesContent);
+	return exampleFxmanifest
+		.replace("{PATH_TO_CLIENT}", config.pathToClient)
+		.replace("{PATH_TO_SERVER}", config.pathToServer)
+		.replace("{PATH_TO_INDEX_HTML}", sanitizePath(config.pathToIndexHtml))
+		.replace("{PATH_TO_FILES}", filesContent);
 };
 
 export const writeFxmanifest = (config: FxmanifestConfig): void => {
-  const content = createFxmanifest(config);
-  const outputPath = config.outputPath || path.join("dist", "fxmanifest.lua");
+	const content = createFxmanifest(config);
+	const outputPath =
+		config.outputPath || path.join(BuildOutputPath, "fxmanifest.lua");
 
-  writeFileSync(outputPath, content, "utf8");
+	writeFileSync(outputPath, content, "utf8");
 };

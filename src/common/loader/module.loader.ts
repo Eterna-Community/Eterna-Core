@@ -3,11 +3,12 @@ import { Logger } from "../logger/logger";
 import { ModuleMetadata } from "../decorator/Module";
 import { DecoratorMetadataKey } from "../constants";
 import { getGlobalContainer } from "../global";
+import { ProviderLoader } from "./Provider/provider.loader";
 
 @Injectable()
 export class ModuleLoader {
-	// @Inject(ProviderLoader)
-	// private readonly providerLoader: ProviderLoader;
+	@Inject(ProviderLoader)
+	private readonly providerLoader: ProviderLoader;
 
 	@Inject(Logger)
 	private readonly logger: Logger;
@@ -17,6 +18,10 @@ export class ModuleLoader {
 
 	public load(moduleClass: any): void {
 		const moduleMetadata = this.getModuleMetadata(moduleClass);
+
+		if (!this.providerLoader) {
+			throw new Error("ProviderLoader is not initialized");
+		}
 
 		if (!moduleMetadata) {
 			throw new Error(
@@ -65,6 +70,7 @@ export class ModuleLoader {
 	}
 
 	private loadImports(imports: any[]): void {
+		if (imports.length === 0) return;
 		for (const importModule of imports) {
 			this.load(importModule);
 		}
@@ -74,7 +80,13 @@ export class ModuleLoader {
 		for (const provider of providers) {
 			try {
 				const providerInstance = this.container.get(provider);
-				// this.providerLoader.load(providerInstance);
+
+				if (!providerInstance) {
+					this.logger.error(`[module] Provider ${provider.name} not found`);
+					return;
+				}
+
+				this.providerLoader.load(providerInstance);
 			} catch (error) {
 				this.logger.error(
 					`[module] Failed to load provider ${provider.name}:`,
@@ -86,8 +98,7 @@ export class ModuleLoader {
 	}
 
 	private loadServices(services: any[]): void {
-		// Services werden normalerweise durch @Injectable automatisch registriert
-		// Hier könntest du zusätzliche Service-Logik hinzufügen
+		// Services normally will be auto registered, but here we could implement more logic to it
 		for (const service of services) {
 			this.logger.debug(`[module] Service ${service.name} registered`);
 		}
@@ -99,7 +110,7 @@ export class ModuleLoader {
 			this.logger.debug(`[module] ${moduleName} unloaded`);
 		} else {
 			this.loadedModules.clear();
-			// this.providerLoader.unload();
+			this.providerLoader.unload();
 			this.logger.debug("[module] All modules unloaded");
 		}
 	}
