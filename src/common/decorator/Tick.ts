@@ -13,22 +13,35 @@ export enum Interval {
 }
 
 export type TickMetadata = {
-	interval: Interval | Interval;
+	interval: Interval | number;
 	name: string;
 	context: boolean;
+	maxRetries?: number;
+	retryDelay?: number;
 };
 
-export const Tick =
-	(
-		interval: number | Interval,
-		name: string,
-		context: boolean = false
-	): MethodDecorator =>
-	(target, propertyKey, descriptor) => {
-		addMethodMetadata(
-			DecoratorMetadataKey.tick,
-			{ interval, name, context },
-			target,
-			propertyKey
-		);
+export const Tick = (
+	interval: number | Interval,
+	name: string,
+	context: boolean = false,
+	options?: { maxRetries?: number; retryDelay?: number }
+): MethodDecorator => {
+	if (typeof interval !== "number" || interval < 0) {
+		throw new Error("Interval must be a non-negative number");
+	}
+
+	if (typeof name !== "string" || name.length === 0) {
+		throw new Error("Tick name must be a non-empty string");
+	}
+
+	return (target, propertyKey, descriptor) => {
+		const metadata: TickMetadata = {
+			interval,
+			name,
+			context,
+			...options,
+		};
+
+		addMethodMetadata(DecoratorMetadataKey.tick, metadata, target, propertyKey);
 	};
+};

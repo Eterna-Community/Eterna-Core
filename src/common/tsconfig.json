@@ -1,7 +1,12 @@
 {
 	"extends": "../../tsconfig.json",
 	"compilerOptions": {
-		"types": ["@citizenfx/server", "@citizenfx/client", "reflect-metadata"],
+		"types": [
+			"@citizenfx/server",
+			"@citizenfx/client",
+			"reflect-metadata",
+			"@types/node"
+		],
 		"noImplicitAny": false
 	},
 	"include": ["./**/*", "../shared/**/*"]
