@@ -20,16 +20,12 @@ export const Injectable =
 				.bind(primaryToken)
 				.to(target as any)
 				.inSingletonScope();
-			console.log(
-				`Injectable Service - ${target.name} registered successfully.`
-			);
 		}
 
 		// Bind the rest of the tokens
 		tokens.slice(1).forEach((token) => {
 			if (!container.isBound(token)) {
 				container.bind(token).toService(primaryToken);
-				console.log(`Injectable Service 2 - ${token} registered successfully.`);
 			}
 		});
 	};

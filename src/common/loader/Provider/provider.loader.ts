@@ -1,5 +1,8 @@
+import { DecoratorMetadataKey } from "../../constants";
 import { Injectable } from "../../decorator/Injectable";
 import { Inject } from "../../decorator/Injectable";
+import { ProviderMetadata } from "../../decorator/Provider";
+import { Logger } from "../../logger/logger";
 import { EventLoader } from "../Events/event.loader";
 import { TickLoader } from "../tick.loader";
 
@@ -8,33 +11,37 @@ export abstract class ProviderLoader {
 	// I dont know if this is needed, normally I use Property Injection
 	constructor(
 		@Inject(EventLoader) private readonly eventLoader: EventLoader,
-		@Inject(TickLoader) private readonly tickLoader: TickLoader
+		@Inject(TickLoader) private readonly tickLoader: TickLoader,
+		@Inject(Logger) private readonly logger: Logger
 	) {}
 
 	public load(instance: any) {
-		console.log("[DEBUG] ProviderLoader.load called with:", instance);
+		try {
+			const metadata = Reflect.getMetadata(
+				DecoratorMetadataKey.provider,
+				instance
+			) as ProviderMetadata;
 
-		if (!this.eventLoader) {
-			console.log("[DEBUG] eventLoader value:", this.eventLoader);
-			throw new Error("EventLoader is not initialized");
-		}
-		if (!this.tickLoader) {
-			throw new Error("TickLoader is not initialized");
-		}
+			this.eventLoader.load(instance);
+			this.tickLoader.load(instance);
 
-		this.eventLoader.load(instance);
-		this.tickLoader.load(instance);
-		// Handle Loading the Loaders
+			this.logger.info(
+				`[Provider] Successfully loaded the Provider - ${metadata.name}`
+			);
+		} catch (error) {
+			this.logger.error(
+				`[Provider] Failed to load the Provider - ${instance}`,
+				error
+			);
+		}
 	}
 
 	public unload() {
-		console.log("[DEBUG] ProviderLoader.unload called");
-		// Handle Unloading the Loaders
-		if (this.eventLoader) {
+		try {
 			this.eventLoader.unload();
-		}
-		if (this.tickLoader) {
 			this.tickLoader.unload();
+		} catch (error) {
+			this.logger.error(`[Provider] Failed to unload the Provider`, error);
 		}
 	}
 }
