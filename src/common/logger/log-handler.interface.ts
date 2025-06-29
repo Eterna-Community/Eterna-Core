@@ -1,6 +1,5 @@
-// log-handler.interface.ts
 import { LogLevel } from "./log-level";
 
 export interface LogHandler {
-  write(level: LogLevel, ...message: string[]): void;
+	write(level: LogLevel, ...message: string[]): void;
 }

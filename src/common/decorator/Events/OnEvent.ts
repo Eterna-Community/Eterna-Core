@@ -4,7 +4,7 @@ import { EventsServer } from "../../events/Server";
 import { addMethodMetadata } from "../../reflect";
 
 export type EventMetadata = {
-	name: EventsClient | EventsServer;
+	name: string;
 	networked: boolean;
 	context: boolean;
 	methodName: string;
